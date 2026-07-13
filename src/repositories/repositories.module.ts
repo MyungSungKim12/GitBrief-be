@@ -1,9 +1,17 @@
 import { Module } from '@nestjs/common';
-import { RepositoriesService } from './repositories.service';
+import { SessionsModule } from '../sessions/sessions.module';
+import { FetchGitHubClient, GitHubClient } from './github.client';
 import { RepositoriesController } from './repositories.controller';
+import { RepositoriesService } from './repositories.service';
 
 @Module({
-  providers: [RepositoriesService],
+  imports: [SessionsModule],
+  providers: [
+    RepositoriesService,
+    FetchGitHubClient,
+    { provide: GitHubClient, useExisting: FetchGitHubClient },
+  ],
   controllers: [RepositoriesController],
+  exports: [RepositoriesService, GitHubClient],
 })
 export class RepositoriesModule {}
