@@ -1,33 +1,68 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import { GEMINI_CLIENT } from './gemini.provider';
-import { SummaryResultDto } from './dto/summary-result.dto';
-
-const SYSTEM_PROMPT = `당신은 숙련된 개발자입니다. 주어진 코드 diff를 읽고 아래 세 항목을 한글로 간결하게 요약하세요.
-1. 수정 목적
-2. 주요 변경 로직
-3. 리뷰어 주의 사항`;
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { createHash } from 'node:crypto';
+import { RepositoriesService } from '../repositories/repositories.service';
+import type { AuthenticatedUser } from '../sessions/session.types';
+import type { CreateSummaryDto } from './dto/create-summary.dto';
+import { normalizeDiff } from './diff-normalizer';
+import { SummaryGenerator } from './summary.generator';
+import { SummaryRepository } from './summary.repository';
 
 @Injectable()
 export class SummariesService {
   constructor(
-    @Inject(GEMINI_CLIENT) private readonly gemini: GoogleGenerativeAI,
+    private readonly repositories: RepositoriesService,
+    private readonly generator: SummaryGenerator,
+    private readonly history: SummaryRepository,
   ) {}
 
-  /**
-   * TODO: diff를 인자로 받아 Gemini에 프롬프트를 전송하고 결과를 파싱한다.
-   * 현재는 초기 셋팅 단계로 뼈대만 구현되어 있다.
-   */
-  summarizeDiff(diff: string): SummaryResultDto {
-    const model = this.gemini.getGenerativeModel({ model: 'gemini-1.5-flash' });
-    void model;
-    void diff;
-    void SYSTEM_PROMPT;
+  async create(user: AuthenticatedUser, input: CreateSummaryDto) {
+    const compare = await this.repositories.getBranchDiff(
+      user.githubToken,
+      input.owner,
+      input.repo,
+      input.base,
+      input.head,
+    );
+    const diff = normalizeDiff(compare.files);
+    const payload = await this.generator.generate(diff);
+    return this.history.create({
+      ...payload,
+      userId: user.id,
+      repositoryFullName: `${input.owner}/${input.repo}`,
+      base: input.base,
+      head: input.head,
+      diffHash: createHash('sha256').update(diff).digest('hex'),
+      model: this.generator.model,
+    });
+  }
 
-    return {
-      purpose: '',
-      keyChanges: '',
-      reviewNotes: '',
-    };
+  list(userId: string, page = 1, limit = 20) {
+    return this.history.listByUser(
+      userId,
+      Math.max(page, 1),
+      Math.min(Math.max(limit, 1), 100),
+    );
+  }
+
+  async findOne(userId: string, id: string) {
+    const summary = await this.history.findByUser(userId, id);
+    if (!summary) throw new NotFoundException('Summary not found');
+    return summary;
+  }
+
+  async regenerate(user: AuthenticatedUser, id: string) {
+    const previous = await this.findOne(user.id, id);
+    const [owner, repo] = previous.repositoryFullName.split('/');
+    return this.create(user, {
+      owner,
+      repo,
+      base: previous.base,
+      head: previous.head,
+    });
+  }
+
+  async remove(userId: string, id: string) {
+    if (!(await this.history.removeByUser(userId, id)))
+      throw new NotFoundException('Summary not found');
   }
 }
