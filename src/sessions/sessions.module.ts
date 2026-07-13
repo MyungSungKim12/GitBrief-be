@@ -6,6 +6,7 @@ import {
 } from './session.repository';
 import { SessionsService } from './sessions.service';
 import { CommonModule } from '../common/common.module';
+import { SessionGuard } from './session.guard';
 
 @Module({
   imports: [CommonModule],
@@ -21,7 +22,8 @@ import { CommonModule } from '../common/common.module';
           config.get<number>('SESSION_TTL_SECONDS') ?? 604800,
         ),
     },
+    SessionGuard,
   ],
-  exports: [SessionsService],
+  exports: [SessionsService, SessionGuard],
 })
 export class SessionsModule {}
