@@ -1,14 +1,27 @@
 import { Injectable } from '@nestjs/common';
-import { ConventionCheckResultDto } from './dto/convention-check-result.dto';
+import { SummaryGenerator } from '../summaries/summary.generator';
+import { checkConventionalCommit } from './conventional-commit';
+import { ReviewRepository } from './review.repository';
 
 @Injectable()
 export class ReviewsService {
-  /**
-   * TODO: LLM에 커밋 메시지와 Conventional Commits 규칙을 전달해 적합성을 판단하고
-   * 어긋난 경우 올바른 예시를 추천받는다.
-   */
-  checkCommitConvention(message: string): ConventionCheckResultDto {
-    void message;
-    return { isValid: true, suggestion: '' };
+  constructor(
+    private readonly repository: ReviewRepository,
+    private readonly generator: SummaryGenerator,
+  ) {}
+
+  async checkCommitConvention(userId: string, message: string) {
+    const result = checkConventionalCommit(message);
+    await this.repository.create({
+      ...result,
+      userId,
+      originalMessage: message,
+    });
+    return result;
+  }
+
+  async analyzeCodeSmells(diff: string) {
+    const result = await this.generator.generate(diff);
+    return result.codeSmells;
   }
 }

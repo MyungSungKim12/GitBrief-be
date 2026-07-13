@@ -20,5 +20,6 @@ import { SummariesService } from './summaries.service';
     { provide: SummaryRepository, useExisting: SupabaseSummaryRepository },
   ],
   controllers: [SummariesController],
+  exports: [SummaryGenerator],
 })
 export class SummariesModule {}
