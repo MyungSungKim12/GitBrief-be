@@ -1,5 +1,7 @@
 # GitBrief 프로젝트 개발 개요
 
+> 최신 프로젝트 정본은 [PROJECT.md](PROJECT.md), 구조는 [ARCHITECTURE.md](ARCHITECTURE.md), 진행 상태는 [ROADMAP.md](ROADMAP.md)에서 관리합니다. 이 문서는 초기 기획 호환용으로 유지합니다.
+
 > 이 문서는 [GitBrief-fe](https://github.com/MyungSungKim12/GitBrief-fe), [GitBrief-be](https://github.com/MyungSungKim12/GitBrief-be) 두 레포에 동일하게 유지되는 전체 프로젝트 개요입니다.
 
 ## 1. 프로젝트 소개
