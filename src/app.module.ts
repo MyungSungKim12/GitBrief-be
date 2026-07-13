@@ -7,10 +7,11 @@ import { RepositoriesModule } from './repositories/repositories.module';
 import { SummariesModule } from './summaries/summaries.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { CommonModule } from './common/common.module';
+import { validateEnvironment } from './config/env.validation';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({ isGlobal: true, validate: validateEnvironment }),
     CommonModule,
     AuthModule,
     RepositoriesModule,

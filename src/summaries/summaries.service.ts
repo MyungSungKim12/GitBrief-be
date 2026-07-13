@@ -10,13 +10,15 @@ const SYSTEM_PROMPT = `당신은 숙련된 개발자입니다. 주어진 코드 
 
 @Injectable()
 export class SummariesService {
-  constructor(@Inject(GEMINI_CLIENT) private readonly gemini: GoogleGenerativeAI) {}
+  constructor(
+    @Inject(GEMINI_CLIENT) private readonly gemini: GoogleGenerativeAI,
+  ) {}
 
   /**
    * TODO: diff를 인자로 받아 Gemini에 프롬프트를 전송하고 결과를 파싱한다.
    * 현재는 초기 셋팅 단계로 뼈대만 구현되어 있다.
    */
-  async summarizeDiff(diff: string): Promise<SummaryResultDto> {
+  summarizeDiff(diff: string): SummaryResultDto {
     const model = this.gemini.getGenerativeModel({ model: 'gemini-1.5-flash' });
     void model;
     void diff;
